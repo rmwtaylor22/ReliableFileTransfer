@@ -57,6 +57,7 @@ Must be written in a precise way as if to communicate to an outsider how to impl
         ◦ We would check the sum (checksum) by flipping the bits and then adding it all up and seeing if it matches the original sum value also stored within the packet sent over.
     • If the sum is transferred correctly, then the server will send back a positive acknowledgment and store the data within a buffer until all the data has been received
     • The client will wait to receive an acknowledgment from the server before sending the next packet. If the acknowledgment is positive, the next packet will be sent; but if it is negative, the previous packet will be sent again. 
+    • A timeout method will also be implemented in the case that a packet is dropped and never even reaches the reciever to get a positive or negative aknowledgement. In the case of a timeout, the client will resend the packet again.
         ◦ If you attempt to resend a packet more than five times, the whole process fails and an error message will be returned to the client.
 	
 	
@@ -81,7 +82,7 @@ How the design overcomes lost and out of sequence packets
 ===================
  
 
-To overcome lost and out of sequence packets, we have implemented a method of sending the packets in order. A packet is sent and if the checksum and sequence number are correct, then a positive acknowledgment is sent and the next packet is sent. If the checksum or sequence number is incorrect, then a negative acknowledgment is sent back to the client; and the client re-sends the packet. If a negative acknowledgment is sent more than 5 times, then the whole process fails and an error message is sent. 	
+To overcome lost and out of sequence packets, we have implemented a method of sending the packets in order. A packet is sent and if the checksum and sequence number are correct, then a positive acknowledgment is sent and the next packet is sent. If the checksum or sequence number is incorrect, then a negative acknowledgment is sent back to the client; and the client re-sends the packet. A timeout will also be implemented to catch a delay in the sending of packets due to a packet being dropped. If a packet is sent more than 5 times and still fails, then the whole process fails and an error message is sent. 	
 
  
 	
