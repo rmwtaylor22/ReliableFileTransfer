@@ -64,8 +64,8 @@ Must be written in a precise way as if to communicate to an outsider how to impl
 ==================================
 
 
- ![Sequence Diagram of successful send](sendSuccess.jpg)
- ![Sequence Diagram of unsuccessful send](sendFail.jpg)
+ ![Sequence Diagram of successful send](sendSuccess.jpeg)
+ ![Sequence Diagram of unsuccessful send](sendFail.jpeg)
 
  
 	
