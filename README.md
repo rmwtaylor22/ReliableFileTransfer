@@ -55,7 +55,12 @@ Must be written in a precise way as if to communicate to an outsider how to impl
     • The client will wait to receive an acknowledgment from the server before sending the next packet. If the acknowledgment is positive, the next packet will be sent; but if it is negative, the previous packet will be sent again. 
     • A timeout method will also be implemented in the case that a packet is dropped and never even reaches the reciever to get a positive or negative aknowledgement. In the case of a timeout, the client will resend the packet again.
         ◦ If you attempt to resend a packet more than five times, the whole process fails and an error message will be returned to the client.
-	
+<ul>
+<li>First item</li>
+<li>Second item</li>
+<li>Third item</li>
+<li>Fourth item</li>
+</ul>	
 	
 	
 	
@@ -82,52 +87,5 @@ To overcome lost and out of sequence packets, we have implemented a method of se
  
 	
 
- 
-	
 
-<!--   Feel free to modify the following to fit a theme of your choosing   -->
-	
 
-<link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet"> <!-- a sans-serif font -->
-	
-
-<style>  /* A TAYLOR-INSPIRED THEME */
-	
-
-body {font-family:'Open Sans',sans-serif;}
-	
-
-.md a:link, .md a:visited {color:hsl(252,23.0%,44.3%); font-family:'Open Sans',sans-serif;}
-	
-
-.md table.table th {background-color:hsl(252,23.0%,44.3%);}
-	
-
-.md .noheader th {display:none;}
-	
-
-.md .firstcol td:first-child {white-space:pre;color:white;vertical-align:top;font-weight:bold;border-color:black;background:hsl(252,23.0%,54.3%);}
-	
-
-.md .firstcol tr:nth-child(even) td:first-child {background:hsl(252,23.0%,44.3%);}
-	
-
-</style>
-	
-
- 
-	
-
- 
-	
-
-<!--   Leave the following Markdeep formatting code, as this will format your text above to look nice in a wed browser   -->
-	
-
-<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
-	
-
-<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
-	
-
-<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible");</script>
