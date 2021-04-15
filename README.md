@@ -2,7 +2,7 @@
 	
 
 
-Author
+Authors
 ------------------------------------------
 	
 	
@@ -31,6 +31,7 @@ Specification that describes the designed RFT protocol
 <li>The server will check the numbers of the packets it has received and send acknowledgments back if it does or doesn’t receive the number it expected.</li>
 <ol>
 <li>We would check the sum (checksum) by flipping the bits and then adding it all up and seeing if it matches the original sum value also stored within the packet sent over.</li>
+
 </ol>
 <li>If the sum is transferred correctly, then the server will send back a positive acknowledgment and store the data within a buffer until all the data has been received.</li>
 <li>The client will wait to receive an acknowledgment from the server before sending the next packet. If the acknowledgment is positive, the next packet will be sent; but if it is negative, the previous packet will be sent again. </li>
@@ -38,7 +39,20 @@ Specification that describes the designed RFT protocol
 <ol>
 <li>If you attempt to resend a packet more than five times, the whole process fails and an error message will be returned to the client.</li>
 </ol>
-</ul>	
+</ul>
+
+
+<ul>
+<li>First item</li>
+<li>Second item</li>
+<li>Third item
+<ul>
+<li>Indented item</li>
+<li>Indented item</li>
+</ul>
+</li>
+<li>Fourth item</li>
+</ul>
 	
 	
 	
@@ -47,8 +61,8 @@ Specification that describes the designed RFT protocol
 ---------------------------------------------
 
 
- ![Sequence Diagram of successful send](sendSuccess.jpeg =250x)
- ![Sequence Diagram of unsuccessful send](sendFail.jpeg =250x)
+ ![Sequence Diagram of successful send](sendSuccess.jpeg | width=100)
+ ![Sequence Diagram of unsuccessful send](sendFail.jpeg  | width=100)
 
  
 	
