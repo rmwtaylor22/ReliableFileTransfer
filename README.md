@@ -40,9 +40,10 @@ Specification that describes the designed RFT protocol
 <li>If you attempt to resend a packet more than five times, the whole process fails and an error message will be returned to the client.</li>
 </ul>
 </li>
+</ul>
 
 <ul>
-<li>First item</li>
+<li>For the initial send of data from the client, we will assign sequential numbers to data packets before sending them across the network; and also include a checksum.</li>
 <li>Second item</li>
 <li>Third item
 <ul>
