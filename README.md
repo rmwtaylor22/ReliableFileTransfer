@@ -47,9 +47,15 @@ Specification that describes the designed RFT protocol
  Packet sequence diagrams
 ---------------------------------------------
 
-
+<figure>
  <img src="sendSuccess.jpeg" width="200" height="200">
+ <figcaption>Send Success</figcaption>
+ </figure>
+ 
+ <figure>
  <img src="sendFail.jpeg" width="200" height="200">
+ <figcaption>Send Fail</figcaption>
+ </figure>
 
  
 	
