@@ -17,8 +17,6 @@
 	
 
 Author
-	
-
 ==================================
 	
 
@@ -78,7 +76,6 @@ Must be written in a precise way as if to communicate to an outsider how to impl
 	
 
 How the design overcomes lost and out of sequence packets
-
 ===================
  
 
