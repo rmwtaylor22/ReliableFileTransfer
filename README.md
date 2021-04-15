@@ -1,11 +1,10 @@
 
-
 <h1>RFT Project</h1>
 	
 
 
 Author
-==================================
+------------------------------------------
 	
 	
 
@@ -23,7 +22,7 @@ Author
 
 
 Specification that describes the designed RFT protocol
-==================================
+-----------------------------------------
 
 <ul>
 <li>For the initial send of data from the client, we will assign sequential numbers to data packets before sending them across the network; and also include a checksum.</li>
@@ -43,7 +42,7 @@ Specification that describes the designed RFT protocol
 	
 
  Packet sequence diagrams
-==================================
+---------------------------------------------
 
 
  ![Sequence Diagram of successful send](sendSuccess.jpeg)
@@ -56,7 +55,7 @@ Specification that describes the designed RFT protocol
 	
 
 How the design overcomes lost and out of sequence packets
-===================
+----------------------------------------------
  
 
 To overcome lost and out of sequence packets, we have implemented a method of sending the packets in order. A packet is sent and if the checksum and sequence number are correct, then a positive acknowledgment is sent and the next packet is sent. If the checksum or sequence number is incorrect, then a negative acknowledgment is sent back to the client; and the client re-sends the packet. A timeout will also be implemented to catch a delay in the sending of packets due to a packet being dropped. If a packet is sent more than 5 times and still fails, then the whole process fails and an error message is sent. 	
