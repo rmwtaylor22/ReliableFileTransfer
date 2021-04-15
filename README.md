@@ -1,4 +1,3 @@
-
 <h1>RFT Project</h1>
 	
 
@@ -17,7 +16,10 @@ Author
 <!-- Note: wrapping table in div.firstcol will style the first column different from other columns -->
 	
 
-<strong>Rose White and Josh Meleski</strong>
+Rose White and Josh Meleski
+
+
+
 
 
 
@@ -27,15 +29,15 @@ Specification that describes the designed RFT protocol
 <ul>
 <li>For the initial send of data from the client, we will assign sequential numbers to data packets before sending them across the network; and also include a checksum.</li>
 <li>The server will check the numbers of the packets it has received and send acknowledgments back if it does or doesn’t receive the number it expected.</li>
-<ul>
+<ol>
 <li>We would check the sum (checksum) by flipping the bits and then adding it all up and seeing if it matches the original sum value also stored within the packet sent over.</li>
-</ul>
+</ol>
 <li>If the sum is transferred correctly, then the server will send back a positive acknowledgment and store the data within a buffer until all the data has been received.</li>
 <li>The client will wait to receive an acknowledgment from the server before sending the next packet. If the acknowledgment is positive, the next packet will be sent; but if it is negative, the previous packet will be sent again. </li>
 <li>A timeout method will also be implemented in the case that a packet is dropped and never even reaches the reciever to get a positive or negative aknowledgement. In the case of a timeout, the client will resend the packet again.</li>
-<ul>
+<ol>
 <li>If you attempt to resend a packet more than five times, the whole process fails and an error message will be returned to the client.</li>
-</ul>
+</ol>
 </ul>	
 	
 	
@@ -45,8 +47,8 @@ Specification that describes the designed RFT protocol
 ---------------------------------------------
 
 
- ![Sequence Diagram of successful send](sendSuccess.jpeg)
- ![Sequence Diagram of unsuccessful send](sendFail.jpeg)
+ ![Sequence Diagram of successful send](sendSuccess.jpeg =250x)
+ ![Sequence Diagram of unsuccessful send](sendFail.jpeg =250x)
 
  
 	
