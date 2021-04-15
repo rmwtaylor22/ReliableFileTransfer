@@ -48,10 +48,8 @@ Specification that describes the designed RFT protocol
 ---------------------------------------------
 
 
- ![Sequence Diagram of successful send](sendSuccess.jpeg | width=100)
- ![Sequence Diagram of unsuccessful send](sendFail.jpeg  | width=100)
- 
- <img src="sendFail.jpeg" width="100" height="100">
+ <img src="sendSuccess.jpeg" width="200" height="200">
+ <img src="sendFail.jpeg" width="200" height="200">
 
  
 	
