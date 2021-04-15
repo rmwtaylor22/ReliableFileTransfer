@@ -43,6 +43,15 @@ name              | Rose White and Josh Meleski
 
 </div>
 
+<div class="noheader firstcol">
+                  |             
+------------------|-------------
+name              | Rose White
+computer + OS     | Personal Windows 10 Lab top computer
+time to complete  | 1 week
+partner           | None
+additional help   | Dr. Denning, CSE Study Tables
+</div>
 
 
 
