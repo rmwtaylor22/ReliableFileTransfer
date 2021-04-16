@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/main.c
+stdio.h
+-
+sys/socket.h
+-
+netdb.h
+-
+string.h
+-
+errno.h
+-
+sys/stat.h
+-
+unistd.h
+/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/unistd.h
+stdlib.h
+/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/stdlib.h
+time.h
+-
+

@@ -1,0 +1,3 @@
+/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles/server_c.dir
