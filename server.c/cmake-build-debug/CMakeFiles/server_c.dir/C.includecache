@@ -17,12 +17,12 @@ string.h
 -
 errno.h
 -
-sys/stat.h
+stdlib.h
 -
 unistd.h
-/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/unistd.h
-stdlib.h
-/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/stdlib.h
-time.h
+-
+sys/types.h
+-
+arpa/inet.h
 -
 
