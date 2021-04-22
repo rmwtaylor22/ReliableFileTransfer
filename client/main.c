@@ -9,7 +9,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
-
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #define SERVER "10.121.218.11"
 #define CLIENT "10.121.218.10"
@@ -17,80 +19,57 @@
 #define MAX_BUFFER_SIZE 4096
 #define IS_MULTIPROCESS 1
 
+#define SERVERPORT "4950"   // port that the user will be connecting to
 
-int main(argc, argv)
-        int     argc;
-        char    *argv[];{
+// arg 1 is hostPortValue, arg2 = the *message
 
+int main(int argc, char *argv[])
+{
     int socket_desc, accept_desc;
-    int return_value;
-    int enable = 1;
+    struct addrinfo hints, *address_resource, *p;
+    int rv;
+    int numbytes;
+    char * buf = "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.";
 
-    // storing command line arguments
-    const char * hostVal = argv[1];
-    const char * serverVal = argv[2];
-    const char * portNum = argv[3];
-    printf("CLIENT: %s\n", hostVal);
-    printf("SERVER: %s\n", serverVal);
-    printf("PORT NUM: %s\n", portNum);
+    const char * serverVal = argv[1];
+    printf("DOCROOT: %s\n", serverVal);
 
-    struct addrinfo hints;
-    struct addrinfo * address_resource;
-    struct sockaddr_storage remote_addr;
-    // remote address size
-    socklen_t remote_addr_s = sizeof(remote_addr);
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;  //ip version 4
-    hints.ai_socktype = SOCK_DGRAM;  // We want a TCP connection
-    // SOCK_STREAM: ordered packets (e.g. TCP)
-    // SOCK_DGRAM: possibly unordered packets (e.g. UDP)
-    hints.ai_flags = AI_PASSIVE;  // Listen on the socket
-
-    return_value = getaddrinfo(hostVal, portNum, &hints, &address_resource);
-    if (return_value != 0){
-        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-        return return_value;
+    if (argc != 2) {
+        fprintf(stderr, "usage: talker hostname message\n");
+        exit(1);
     }
 
-    // socket(): creates a new TCP/IP socket, no address or port is assigned yet
-    socket_desc = socket(
-            address_resource->ai_family,    // IPv4
-            address_resource->ai_socktype,  // Streaming Protocol
-            address_resource->ai_protocol   // TCP
-    );
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
 
-    if (socket_desc == -1) {
-        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-        return socket_desc;
+    if((rv = getaddrinfo(argv[1], SERVERPORT, &hints, &address_resource)) !=0){
+        fprintf(stderr,"getaddrinfo: %s\n", gai_strerror(rv));
+        return 1;
     }
 
-    // makes the address of the socket reuseable
-    return_value = setsockopt(socket_desc, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
-    if (return_value == -1){
-        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-        return return_value;
+    for(p = address_resource; p != NULL; p = p->ai_next) {
+        if((socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+            perror("talker: socket");
+            continue;
+        }
+        break;
     }
 
-    // bind(): assign address and port to socket
-    return_value = bind(socket_desc, address_resource->ai_addr, address_resource->ai_addrlen);
-    if (return_value == -1){
-        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-        return return_value;
+    if (p == NULL) {
+        fprintf(stderr, "talker: failed to create socket\n");
+        return 2;
+    }
+
+    if ((numbytes = sendto (socket_desc, buf, strlen(buf), 0, p->ai_addr, p->ai_addrlen)) == -1){
+        perror("talker: sendto");
+        exit(1);
     }
 
     freeaddrinfo(address_resource);
 
-    return_value = listen(socket_desc, MAX_CLIENT_BACKLOG);
-    if (return_value == -1){
-        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-        return return_value;
-    }
-
-
-    accept_desc = accept(socket_desc, (struct sockaddr*) &remote_addr, &remote_addr_s);
-    // handle_connection(accept_desc);
-    close(accept_desc);
-
+    printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
+    close(socket_desc);
     return 0;
+
 }
