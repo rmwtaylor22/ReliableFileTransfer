@@ -21,8 +21,4 @@ stdlib.h
 -
 unistd.h
 -
-sys/types.h
--
-arpa/inet.h
--
 
