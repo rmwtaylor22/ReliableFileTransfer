@@ -17,9 +17,7 @@
 #define MAX_BUFFER_SIZE 4096
 
 int socket_desc;
-void send_it(struct addrinfo *p){
-    char *buf;
-    buf = "HELLO THERE";
+void send_it(struct addrinfo *p, char * buf){
     int numbytes;
     if ((numbytes = sendto (socket_desc, buf, strlen(buf), 0, p->ai_addr, p->ai_addrlen)) == -1){
         perror("talker: sendto");
@@ -28,7 +26,7 @@ void send_it(struct addrinfo *p){
     printf("talker: sent %d bytes to %s\n", numbytes, CLIENT);
 }
 
-void process_content(socklen_t remote_addr_s,struct sockaddr_storage remote_addr) {
+void process_content(socklen_t remote_addr_s,struct sockaddr_storage remote_addr, struct addrinfo *p) {
     int num_bytes;
     char buf[MAX_BUFFER_SIZE];
     remote_addr_s = sizeof(remote_addr);
@@ -41,20 +39,28 @@ void process_content(socklen_t remote_addr_s,struct sockaddr_storage remote_addr
     buf[num_bytes] = '\0';
     printf("PACKET CONTENTS: %s \n", buf);
 
+    if(strcmp(buf, "ACK") == 0)
+        send_it(p,buf);
+    else {
+        strcpy(buf, "NAH dude");
+        send_it(p, buf);
+
+    }
+
 }
-void Listen(struct addrinfo *address_resource, struct addrinfo *p, socklen_t remote_addr_s,struct sockaddr_storage remote_addr){
+int Listen(struct addrinfo *address_resource, struct addrinfo *p, socklen_t remote_addr_s,struct sockaddr_storage remote_addr){
     // socket(): creates a new UDP socket, no address or port is assigned yet
 
     // Loops until client is found
     for  (p = address_resource; p != NULL ; p = p->ai_next) {
         if( (socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol))  == -1) {
             printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-            return;
+            return -1;
         }
         if (bind(socket_desc, p->ai_addr, p->ai_addrlen ) == -1){
             close(socket_desc);
             printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-            return;
+            return -1;
         }
         break;
     }
@@ -63,7 +69,8 @@ void Listen(struct addrinfo *address_resource, struct addrinfo *p, socklen_t rem
     }
 
     printf("Listener: waiting to recv from... \n");
-    process_content(remote_addr_s, remote_addr);
+    process_content(remote_addr_s, remote_addr, p);
+    return 1;
 }
 
 int main(int argc, char* argv[]) {
@@ -73,7 +80,8 @@ int main(int argc, char* argv[]) {
     struct addrinfo hints, *p;
     struct addrinfo * address_resource;
     struct sockaddr_storage remote_addr;
-    char buf[MAX_BUFFER_SIZE];
+    char *buf[MAX_BUFFER_SIZE];
+    strcpy(buf, "Hello there");
     socklen_t remote_addr_s = sizeof(remote_addr);
    // char s[INET_ADDRSTRLEN];
 
@@ -97,10 +105,14 @@ int main(int argc, char* argv[]) {
     Listen(address_resource, p, remote_addr_s, remote_addr);
     freeaddrinfo(address_resource);
 
+
+
+    // Gets clients ip address
     if((rv = getaddrinfo(CLIENT, PORT, &hints, &address_resource)) !=0){
         fprintf(stderr,"getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
+    //links up with the socket
     for(p = address_resource; p != NULL; p = p->ai_next) {
         if((socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             perror("talker: socket");
@@ -113,7 +125,10 @@ int main(int argc, char* argv[]) {
         return 2;
     }
 
-    send_it(p);
+    send_it(p, buf);
+    free(address_resource);
+
+
     close(socket_desc);
 
     return 0;
