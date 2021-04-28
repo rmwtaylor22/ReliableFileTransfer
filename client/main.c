@@ -27,7 +27,7 @@ void sendIt()
 
 }
 
-void process_contents(socket_desc)
+int process_contents(socket_desc)
 {
     int num_bytes;
     char buf[MAX_BUFFER_SIZE];
@@ -44,7 +44,15 @@ void process_contents(socket_desc)
     buf[num_bytes] = '\0';
     printf("PACKET CONTENTS: %s ", buf);
 
-    close(socket_desc);
+    if (strcmp(buf,"ACK") == 0){
+        close(socket_desc);
+        return 1;
+
+    } else {
+        fprintf(stderr, "Server sent something other than an acknowledgement.\n");
+        close(socket_desc);
+        return -1;
+    }
 }
 
 
@@ -74,18 +82,19 @@ int listener()
     for  (p = address_resource; p != NULL ; p = p->ai_next) {
         if( (socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol))  == -1) {
             printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-            continue;
+            return -1;
         }
         if (bind(socket_desc, p->ai_addr, p->ai_addrlen ) == -1){
             close(socket_desc);
             printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-            continue;
+            return -1;
         }
         break;
     }
 
     if(p == NULL){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+        return -1;
     }
 
     freeaddrinfo(address_resource);
@@ -94,7 +103,7 @@ int listener()
 
     process_contents(socket_desc);
 
-    return 0;
+    return 1;
 }
 
 
@@ -116,6 +125,8 @@ int main(int argc, char *argv[])
     printf("REMOTE_PATH: %s\n", remotePath);
     const char * localPath = argv[4];
     printf("LOCAL_PATH: %s\n", localPath);
+
+    const char * ack = "ACK";
 
     if (argc != 5) {
         fprintf(stderr, "usage: talker hostname message\n");
@@ -144,14 +155,35 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    if ((numbytes = sendto (socket_desc, remotePath, strlen(remotePath), 0, p->ai_addr, p->ai_addrlen)) == -1){
+    // send the ACK
+    if ((numbytes = sendto (socket_desc, ack, strlen(ack), 0, p->ai_addr, p->ai_addrlen)) == -1){
         perror("talker: sendto");
         exit(1);
     }
 
     printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
 
-    // listen for an acknowledgement
+
+    // listen for follow-up ACK
+    // listener == 1 if it received something, -1 if not
+    for (int i=0; i<9; i++) {
+        if (listener() == -1) {
+            if (i == 8) {
+                fprintf(stderr, "listener failed to receive acknowledgement.\n");
+                exit(1);
+            }
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    if ((numbytes = sendto (socket_desc, remotePath, strlen(remotePath), 0, p->ai_addr, p->ai_addrlen)) == -1){
+        perror("talker: sendto");
+        exit(1);
+    }
+
+    // receive data
     listener();
 
     freeaddrinfo(address_resource);
