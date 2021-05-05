@@ -20,6 +20,7 @@
 
 int socket_desc;
 int init = 1;
+int seqNum = 0;
 // Global variable for file path
 
 void send_it(struct addrinfo hints, char * buf, struct addrinfo * address_resource, char * PORT){
@@ -55,7 +56,8 @@ void send_it(struct addrinfo hints, char * buf, struct addrinfo * address_resour
 
 void process_content(socklen_t remote_addr_s,struct sockaddr_storage remote_addr, struct addrinfo hints, struct addrinfo * address_resource, char * PORT) {
     int num_bytes;
-    char * buf[ACK_HEADER];
+    char * ackBuf[ACK_HEADER];
+    char * dataBuf[MAX_BUFFER_SIZE];
     char * recv_buf[MAX_BUFFER_SIZE];
     remote_addr_s = sizeof(remote_addr);
     num_bytes = recvfrom(socket_desc, recv_buf, MAX_BUFFER_SIZE - 1, 0, (struct sockaddr *) &remote_addr, &remote_addr_s);
@@ -64,11 +66,13 @@ void process_content(socklen_t remote_addr_s,struct sockaddr_storage remote_addr
         printf("Error: recvfrom %s (line: %d)\n", strerror(errno), __LINE__);
 
     printf("Received packet \nPacket is %d long\n", num_bytes);
-    buf[num_bytes] = '\0';
+
+    // Marks the end of the file?
+    char buf= '\0';
     printf("PACKET CONTENTS: %s \n", recv_buf);
 
 
-    //If this is the first communication from client
+    // First communication from client?
     if(init == 1){
 
 
@@ -85,16 +89,50 @@ void process_content(socklen_t remote_addr_s,struct sockaddr_storage remote_addr
         if (fp == NULL){
 
             printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-            strcpy(buf, "NACK");
+            strcpy(ackBuf, "NACK");
+            send_it(hints, ackBuf, address_resource, PORT);
+        } else {
+            strcpy(dataBuf, "PACK");
+            strcpy(dataBuf, seqNum);
+            seqNum += 1;
+
+            int bytes_read;
+
+            // start cursor at 0 (beginning of file) and have take in data until bits == 1500
+            for (int i=0; i < 1500; i++){
+                bytes_read = fread(&dataBuf, 1, 1, fp);
+                if (bytes_read != 1){
+                    break;
+                }
+                send_it(hints, dataBuf, address_resource, PORT);
+            }
         }
 
+    // NOT First communication from client, reading in next 1500ish bytes
+    } else {
+        // IF client receieved everything alright
+        if(strcmp(recv_buf, "PACK") == 0){
+            // read all the data from the file stream fp
+            // read one byte at a time
+            char c;
+            int bytes_read;
+
+            for (int i=0; i < 1500; i++){
+                bytes_read = fread(&c, 1, 1, fp);
+                if (bytes_read != 1){
+                    break;
+                }
+                send(accept_desc, &c, 1, 0);
+            }
+            send_it(hints, dataBuf, address_resource, PORT);
+
+        // client DID NOT receive everything alright
+        } else {
+            // send last packet
+            // we should store previous packet somewhere
+        }
     }
-    else{
-            // loop that sends the data requested from buf
 
-        }
-    if(strcmp(buf, "PACK") == 0)
-        send_it(hints, buf, address_resource, PORT);
 }
 void Listen(struct addrinfo *address_resource, struct addrinfo hints, socklen_t remote_addr_s,struct sockaddr_storage remote_addr, char * PORT){
     // socket(): creates a new UDP socket, no address or port is assigned yet
