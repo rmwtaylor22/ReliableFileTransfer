@@ -17,16 +17,19 @@
 #define CLIENT "10.121.218.10"
 #define MAX_CLIENT_BACKLOG 128
 #define MAX_BUFFER_SIZE 4096
+#define MAX_PAYLOAD_SIZE 1500
 #define SPORT "4950"
 #define IS_MULTIPROCESS 1
 
 // arg 1 is hostPortValue, arg2 = the *message
 
-void sendIt()
-{
+struct packet{
+    int seqNum;
+    char ack[4];
+    char payload[MAX_PAYLOAD_SIZE];
+};
 
-}
-
+// Reads the contents
 int process_contents(socket_desc)
 {
     int num_bytes;
@@ -44,7 +47,7 @@ int process_contents(socket_desc)
     buf[num_bytes] = '\0';
     printf("PACKET CONTENTS: %s ", buf);
 
-    if (strcmp(buf,"ACK") == 0){
+    if (strcmp(buf,"PACK") == 0){
         close(socket_desc);
         return 1;
 
@@ -55,7 +58,7 @@ int process_contents(socket_desc)
     }
 }
 
-
+// Listens for communication from server
 int listener()
 {
     int return_value;
@@ -91,7 +94,7 @@ int listener()
         }
         break;
     }
-
+    // client not found
     if(p == NULL){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
         return -1;
@@ -115,8 +118,10 @@ int main(int argc, char *argv[])
     int rv;
     int numbytes;
 
-    char * buf = "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.";
+    // File Request: ip address, port, file
+    const char * fileReq = "10.121.218.11 4950 /home/CS/users/jmeleski/.linux/rwhite-jmeleski/serverFiles/a.html";
 
+    // Read in the arg vals from the command line
     const char * serverVal = argv[1];
     printf("SERVER_IP: %s\n", serverVal);
     const char * serverPort = argv[2];
@@ -126,22 +131,24 @@ int main(int argc, char *argv[])
     const char * localPath = argv[4];
     printf("LOCAL_PATH: %s\n", localPath);
 
-    const char * ack = "ACK";
-
+    // Makes sure program received correct # args
     if (argc != 5) {
         fprintf(stderr, "usage: talker hostname message\n");
         exit(1);
     }
 
+    // set hints to 0 mem
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
+    // get address info
     if((rv = getaddrinfo(serverVal, serverPort, &hints, &address_resource)) !=0){
         fprintf(stderr,"getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
 
+    // find address resource, loop until one is found and creates socket
     for(p = address_resource; p != NULL; p = p->ai_next) {
         if((socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             perror("talker: socket");
@@ -150,38 +157,40 @@ int main(int argc, char *argv[])
         break;
     }
 
+    // no socket found
     if (p == NULL) {
         fprintf(stderr, "talker: failed to create socket\n");
         return 2;
     }
 
-    // send the ACK
-    if ((numbytes = sendto (socket_desc, ack, strlen(ack), 0, p->ai_addr, p->ai_addrlen)) == -1){
+
+    // send the file request
+    if ((numbytes = sendto (socket_desc, fileReq, strlen(fileReq), 0, p->ai_addr, p->ai_addrlen)) == -1){
         perror("talker: sendto");
         exit(1);
     }
-
     printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
 
 
-    // listen for follow-up ACK
-    // listener == 1 if it received something, -1 if not
+    // listen for the following response
     for (int i=0; i<9; i++) {
+        // listener returns -1 if the ACK didn't == "PACK"
         if (listener() == -1) {
             if (i == 8) {
                 fprintf(stderr, "listener failed to receive acknowledgement.\n");
                 exit(1);
+            } else {
+                if ((numbytes = sendto(socket_desc, fileReq, strlen(fileReq), 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                    perror("talker: sendto (second try)");
+                    exit(1);
+                }
+                printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
             }
-            continue;
         } else {
             break;
         }
     }
 
-    if ((numbytes = sendto (socket_desc, remotePath, strlen(remotePath), 0, p->ai_addr, p->ai_addrlen)) == -1){
-        perror("talker: sendto");
-        exit(1);
-    }
 
     // receive data
     listener();
