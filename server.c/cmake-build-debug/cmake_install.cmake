@@ -1,4 +1,4 @@
-# Install script for directory: /home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c
+# Install script for directory: /home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/server.c
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/server.c/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
