@@ -19,22 +19,38 @@
 #define NUM_HEADER 32
 
 int socket_desc;
-int init = 1;
 int seqNum = 0;
 // Global variable for file path
+struct addrinfo hints;
+struct addrinfo * address_resource;
+struct sockaddr_storage remote_addr;
+socklen_t remote_addr_s = sizeof(remote_addr);
 
-void send_it(struct addrinfo hints, char * buf, struct addrinfo * address_resource, char * PORT){
+void Listen();
+
+
+void process_response(PORT)
+{
+
+    Listen();
+}
+
+
+
+
+void send_it(char *buf, char * PORT){
     int numbytes;
     int rv;
     char * send_buf[MAX_BUFFER_SIZE];
     struct addrinfo *p;
+
+    // get address info
     if(( rv = getaddrinfo(CLIENT, PORT, &hints, &address_resource)) !=0){
         fprintf(stderr,"getaddrinfo: %s\n", gai_strerror(rv));
         return;
     }
-    //links up with the socket
 
-
+    // links up with the socket
     for(p = address_resource; p != NULL; p = p->ai_next) {
         if((socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             perror("talker: socket");
@@ -42,19 +58,26 @@ void send_it(struct addrinfo hints, char * buf, struct addrinfo * address_resour
         }
         break;
     }
+    // couldn't link up with socket: error
     if (p == NULL) {
         fprintf(stderr, "talker: failed to create socket\n");
         return;
     }
-    if ((numbytes = sendto (socket_desc, buf, strlen(buf), 0, p->ai_addr, p->ai_addrlen)) == -1){
-        perror("talker: sendto");
-        exit(1);
-    }
-    printf("talker: sent %d bytes to %s\n", numbytes, CLIENT);
 
+    int bytes_read;
+    char c;
+
+    // loop of sending char c data chunk by chunk
+    while(1) {
+        bytes_read = fread(&c, 1, 1500, buf);
+        if (bytes_read != 1) {
+            break;
+        }
+        sendto(socket_desc, &c, strlen(&c), 0, p->ai_addr, p->ai_addrlen);
+    }
 }
 
-void process_content(socklen_t remote_addr_s,struct sockaddr_storage remote_addr, struct addrinfo hints, struct addrinfo * address_resource, char * PORT) {
+void process_request(char * PORT) {
     int num_bytes;
     char * ackBuf[ACK_HEADER];
     char * dataBuf[MAX_BUFFER_SIZE];
@@ -69,72 +92,47 @@ void process_content(socklen_t remote_addr_s,struct sockaddr_storage remote_addr
 
     // Marks the end of the file?
     char buf= '\0';
-    printf("PACKET CONTENTS: %s \n", recv_buf);
+    printf("PACKET CONTENTS: %s \n", *recv_buf);
 
 
-    // First communication from client?
-    if(init == 1){
+    char ip[15], port[4], file[100];
 
+    sscanf((const char *) recv_buf, "%s %s %s", ip, port, file);
 
-        init = 0;
-
-        // parse incoming buffer for search paths
-
-        FILE *fp;
-        char *home_dir = malloc(MAX_BUFFER_SIZE);
-
-        strcpy(home_dir, DOCROOT);
-        strcat(home_dir, file);
-        fp = fopen(home_dir, "r");
-        if (fp == NULL){
-
-            printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-            strcpy(ackBuf, "NACK");
-            send_it(hints, ackBuf, address_resource, PORT);
-        } else {
-            strcpy(dataBuf, "PACK");
-            strcpy(dataBuf, seqNum);
-            seqNum += 1;
-
-            int bytes_read;
-
-            // start cursor at 0 (beginning of file) and have take in data until bits == 1500
-            for (int i=0; i < 1500; i++){
-                bytes_read = fread(&dataBuf, 1, 1, fp);
-                if (bytes_read != 1){
-                    break;
-                }
-                send_it(hints, dataBuf, address_resource, PORT);
-            }
-        }
-
-    // NOT First communication from client, reading in next 1500ish bytes
-    } else {
-        // IF client receieved everything alright
-        if(strcmp(recv_buf, "PACK") == 0){
-            // read all the data from the file stream fp
-            // read one byte at a time
-            char c;
-            int bytes_read;
-
-            for (int i=0; i < 1500; i++){
-                bytes_read = fread(&c, 1, 1, fp);
-                if (bytes_read != 1){
-                    break;
-                }
-                send(accept_desc, &c, 1, 0);
-            }
-            send_it(hints, dataBuf, address_resource, PORT);
-
-        // client DID NOT receive everything alright
-        } else {
-            // send last packet
-            // we should store previous packet somewhere
-        }
+    // parse incoming buffer for search paths
+    FILE *fp;
+    fp = fopen(file, "r");
+    if (fp == NULL){
+        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
     }
+    else {
+        int bytes_read;
+        char c;
+        int totalRead = 0;
 
+        // read all of the data into c buffer
+        while (1) {
+            bytes_read = fread(&c, 1, 1, fp);
+            totalRead ++;
+            if (bytes_read != 1) {
+                break;
+            }
+            if (totalRead % 1500 == 0){
+                // send buffer to "send_it" to have the data be sent little by little
+                send_it(&c, PORT);
+                memset(&c, 0, 1);
+            }
+        }
+        // send the rest of the data if there is some
+        if(c != NULL)
+    }
 }
-void Listen(struct addrinfo *address_resource, struct addrinfo hints, socklen_t remote_addr_s,struct sockaddr_storage remote_addr, char * PORT){
+
+
+
+
+
+void Listen(char * PORT){
     // socket(): creates a new UDP socket, no address or port is assigned yet
     int return_value;
     struct addrinfo *p;
@@ -162,19 +160,14 @@ void Listen(struct addrinfo *address_resource, struct addrinfo hints, socklen_t 
     }
 
     printf("Listener: waiting to recv from... \n");
-    process_content(remote_addr_s, remote_addr, hints, address_resource, PORT);
-    return;
+    process_request(PORT);
+
 }
 
 int main(int argc, char* argv[]) {
 
     char *PORT = argv[1];
-    struct addrinfo hints;
-    struct addrinfo * address_resource;
-    struct sockaddr_storage remote_addr;
-    char *buf[MAX_BUFFER_SIZE];
-    strcpy(buf, "Hello there");
-    socklen_t remote_addr_s = sizeof(remote_addr);
+
    // char s[INET_ADDRSTRLEN];
 
     printf("%s \n", PORT);
@@ -189,7 +182,7 @@ int main(int argc, char* argv[]) {
 
     //return value for listener
 
-    Listen(address_resource, hints, remote_addr_s, remote_addr, PORT);
+    Listen(PORT);
     freeaddrinfo(address_resource);
 
     close(socket_desc);
