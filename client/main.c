@@ -5,21 +5,13 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 
-#define SERVER "10.121.218.11"
-#define CLIENT "10.121.218.10"
-#define MAX_CLIENT_BACKLOG 128
+#define CLIENT "10.121.201.7"
+
 #define MAX_BUFFER_SIZE 4096
 #define MAX_PAYLOAD_SIZE 1500
 #define SPORT "4950"
-#define IS_MULTIPROCESS 1
+
 
 // arg 1 is hostPortValue, arg2 = the *message
 
@@ -29,16 +21,48 @@ struct packet{
     char payload[MAX_PAYLOAD_SIZE];
 };
 
+int socket_desc;
+int init = 1;
+int listener();
+struct addrinfo hints, *p;
+struct addrinfo * address_resource;
+struct sockaddr_storage remote_addr;
+socklen_t remote_addr_s = sizeof(remote_addr);
+
+
+void send_it(char *buf, char * PORT){
+    int rv;
+    struct addrinfo *p;    // get address info
+    if(( rv = getaddrinfo(CLIENT, PORT, &hints, &address_resource)) !=0){
+        fprintf(stderr,"getaddrinfo: %s\n", gai_strerror(rv));
+        return;
+    }    // links up with the socket
+    for(p = address_resource; p != NULL; p = p->ai_next) {
+        if((socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+            perror("talker: socket");
+            continue;
+        }
+        break;
+    }
+    // couldn't link up with socket: error
+    if (p == NULL) {
+        fprintf(stderr, "talker: failed to create socket\n");
+        return;
+    }
+
+    printf("SENT BRO! \n");
+    sendto(socket_desc, buf, strlen(buf), 0, p->ai_addr, p->ai_addrlen);
+}
+
+
 // Reads the contents
-int process_contents(socket_desc)
+int process_contents(char * PORT)
 {
     int num_bytes;
-    char buf[MAX_BUFFER_SIZE];
-    struct sockaddr_storage remote_addr;
-    socklen_t remote_addr_s = sizeof(remote_addr);
+    char buf[MAX_PAYLOAD_SIZE];
 
     remote_addr_s = sizeof(remote_addr);
-    num_bytes = recvfrom(socket_desc, buf, MAX_BUFFER_SIZE-1, 0, (struct sockaddr *) &remote_addr, &remote_addr_s);
+    num_bytes = recvfrom(socket_desc, buf, MAX_PAYLOAD_SIZE, 0, (struct sockaddr *) &remote_addr, &remote_addr_s);
 
     if (num_bytes == -1)
         printf("Error: recvfrom %s (line: %d)\n", strerror(errno), __LINE__);
@@ -46,28 +70,29 @@ int process_contents(socket_desc)
     printf("Received packet \nPacket is %d long\n", num_bytes);
     buf[num_bytes] = '\0';
     printf("PACKET CONTENTS: %s ", buf);
+    printf("%lu", sizeof(buf));
+    memset(buf, 0, sizeof(buf));
+    FILE *fp;
+    char theBuf[1500];
+    fp = fopen("file.txt", "w");
 
-    if (strcmp(buf,"PACK") == 0){
-        close(socket_desc);
-        return 1;
-
-    } else {
-        fprintf(stderr, "Server sent something other than an acknowledgement.\n");
-        close(socket_desc);
-        return -1;
+    while(num_bytes != -1) {
+        memcpy(theBuf, buf, sizeof(theBuf));
+        fwrite(theBuf, 1, sizeof(buf), fp);
+        listener(PORT);
+        num_bytes = recvfrom(socket_desc, buf, MAX_PAYLOAD_SIZE, 0, (struct sockaddr *) &remote_addr, &remote_addr_s);
+        send_it("PACK", PORT);
     }
+    fclose(fp);
+
+
 }
 
 // Listens for communication from server
-int listener()
+int listener(char * PORT)
 {
     int return_value;
-    int num_bytes;
-    struct addrinfo hints, *p;
-    struct addrinfo * address_resource;
-    struct sockaddr_storage remote_addr;
-    char buf[MAX_BUFFER_SIZE];
-    socklen_t remote_addr_s = sizeof(remote_addr);
+
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;  // IPv4
@@ -80,17 +105,19 @@ int listener()
     }
 
     // socket(): creates a new UDP socket, no address or port is assigned yet
-    int socket_desc;
+
     // Loops until client is found
     for  (p = address_resource; p != NULL ; p = p->ai_next) {
         if( (socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol))  == -1) {
             printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
             return -1;
         }
-        if (bind(socket_desc, p->ai_addr, p->ai_addrlen ) == -1){
-            close(socket_desc);
-            printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-            return -1;
+        if (init == 1) {
+            if (bind(socket_desc, p->ai_addr, p->ai_addrlen) == -1) {
+                close(socket_desc);
+                printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+                return -1;
+            }
         }
         break;
     }
@@ -102,9 +129,12 @@ int listener()
 
     freeaddrinfo(address_resource);
 
-    printf("Listener: waiting to recvfrom... \n");
 
-    process_contents(socket_desc);
+    printf("Listener: waiting to recvfrom... \n");
+    if(init == 1) {
+        init = 0;
+        process_contents(PORT);
+    }
 
     return 1;
 }
@@ -113,13 +143,14 @@ int listener()
 
 int main(int argc, char *argv[])
 {
-    int socket_desc;
-    struct addrinfo hints, *address_resource, *p;
-    int rv;
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
     int numbytes;
 
     // File Request: ip address, port, file
-    const char * fileReq = "10.121.218.11 4950 /home/CS/users/jmeleski/.linux/rwhite-jmeleski/serverFiles/a.html";
+    const char * fileReq = "10.121.201.7 4950 /home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/serverFiles/dictionary.txt";
 
     // Read in the arg vals from the command line
     const char * serverVal = argv[1];
@@ -137,43 +168,10 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // set hints to 0 mem
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-
-    // get address info
-    if((rv = getaddrinfo(serverVal, serverPort, &hints, &address_resource)) !=0){
-        fprintf(stderr,"getaddrinfo: %s\n", gai_strerror(rv));
-        return 1;
-    }
-
-    // find address resource, loop until one is found and creates socket
-    for(p = address_resource; p != NULL; p = p->ai_next) {
-        if((socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-            perror("talker: socket");
-            continue;
-        }
-        break;
-    }
-
-    // no socket found
-    if (p == NULL) {
-        fprintf(stderr, "talker: failed to create socket\n");
-        return 2;
-    }
-
-
-    // send the file request
-    if ((numbytes = sendto (socket_desc, fileReq, strlen(fileReq), 0, p->ai_addr, p->ai_addrlen)) == -1){
-        perror("talker: sendto");
-        exit(1);
-    }
-    printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
-
+    send_it(fileReq, serverPort);
 
     // listen for the following response
-    for (int i=0; i<9; i++) {
+  /*  for (int i=0; i<9; i++) {
         // listener returns -1 if the ACK didn't == "PACK"
         if (listener() == -1) {
             if (i == 8) {
@@ -189,13 +187,13 @@ int main(int argc, char *argv[])
         } else {
             break;
         }
-    }
+    }*/
 
 
     // receive data
-    listener();
+    listener(serverPort);
 
-    freeaddrinfo(address_resource);
+  //  freeaddrinfo(address_resource);
 
     close(socket_desc);
     return 0;
