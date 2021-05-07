@@ -68,10 +68,10 @@ RM = /opt/clion-2020.2/bin/cmake/linux/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/server.c
+CMAKE_SOURCE_DIR = /home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/server.c/cmake-build-debug
+CMAKE_BINARY_DIR = /home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -100,9 +100,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles /home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles /home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/CS/users/jmeleski/.linux/rwhite-jmeleski/server.c/cmake-build-debug/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
