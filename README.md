@@ -48,12 +48,12 @@ Specification that describes the designed RFT protocol
 ---------------------------------------------
 
 <figure>
- <img src="sendSuccess.jpeg" width="200" height="200">
+ <img src="EC2A54B4-3D44-4FFE-8347-3A7B41950915.jpeg" width="200" height="200">
  <figcaption>Send Success</figcaption>
  </figure>
  
  <figure>
- <img src="sendFail.jpeg" width="200" height="200">
+ <img src="E8EA6FA6-444D-4D27-A3ED-58F13FAF7E4A.jpeg" width="200" height="200">
  <figcaption>Send Fail</figcaption>
  </figure>
 
