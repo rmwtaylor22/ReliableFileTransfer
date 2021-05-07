@@ -29,9 +29,7 @@ Specification that describes the designed RFT protocol
 <ul>
 <li>For the initial send of data, the client sends the file path of the desired server file it wants to write to a file.</li>
 <li>The server will check if the requested file exists. If it doesn't the program errors and stops.</li>
-<ul>
 <li>If the sum is transferred correctly, then the server will send back a positive acknowledgment and store the data within a buffer until all the data has been received.</li>
-</ul>
 </li>
 <li>If the sum is transferred correctly, then the server will send back a positive acknowledgment and store the data within a buffer until all the data has been received.</li>
 <li>The client will wait to receive an acknowledgment from the server before sending the next packet. If the acknowledgment is positive, the next packet will be sent; but if it is negative, the previous packet will be sent again. </li>
