@@ -5,8 +5,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <time.h>
 
-#define CLIENT "10.121.201.7"
+#define SERVER "10.121.217.8"
 
 #define MAX_BUFFER_SIZE 4096
 #define MAX_PAYLOAD_SIZE 1500
@@ -15,15 +16,12 @@
 
 // arg 1 is hostPortValue, arg2 = the *message
 
-struct packet{
-    int seqNum;
-    char ack[4];
-    char payload[MAX_PAYLOAD_SIZE];
-};
 
 int socket_desc;
 int init = 1;
 int listener();
+char * localPath;
+char * serverVal;
 struct addrinfo hints, *p;
 struct addrinfo * address_resource;
 struct sockaddr_storage remote_addr;
@@ -33,7 +31,7 @@ socklen_t remote_addr_s = sizeof(remote_addr);
 void send_it(char *buf, char * PORT){
     int rv;
     struct addrinfo *p;    // get address info
-    if(( rv = getaddrinfo(CLIENT, PORT, &hints, &address_resource)) !=0){
+    if(( rv = getaddrinfo(serverVal, PORT, &hints, &address_resource)) !=0){
         fprintf(stderr,"getaddrinfo: %s\n", gai_strerror(rv));
         return;
     }    // links up with the socket
@@ -56,7 +54,7 @@ void send_it(char *buf, char * PORT){
 
 
 // Reads the contents
-int process_contents(char * PORT)
+void process_contents(char * PORT)
 {
     int num_bytes;
     char buf[MAX_PAYLOAD_SIZE];
@@ -71,20 +69,30 @@ int process_contents(char * PORT)
     buf[num_bytes] = '\0';
     printf("PACKET CONTENTS: %s ", buf);
     printf("%lu", sizeof(buf));
-    memset(buf, 0, sizeof(buf));
+    char dest[100];
+
     FILE *fp;
-    char theBuf[1500];
-    fp = fopen("file.txt", "w");
+    sprintf(dest, "%s/%s", localPath, "server_file.txt");
 
-    while(num_bytes != -1) {
-        memcpy(theBuf, buf, sizeof(theBuf));
-        fwrite(theBuf, 1, sizeof(buf), fp);
-        listener(PORT);
+    fp = fopen(dest, "w");
+
+    while(num_bytes != 0) {
+        /*
+        if (num_bytes == -1)
+            send_it("NACK", PORT);
+        else{
+            send_it("PACK", PORT);
+        }
+         // Sends acknowledgment back saying it got the packet
+
+         */
+        fwrite(buf, sizeof(buf), 1, fp);
         num_bytes = recvfrom(socket_desc, buf, MAX_PAYLOAD_SIZE, 0, (struct sockaddr *) &remote_addr, &remote_addr_s);
-        send_it("PACK", PORT);
-    }
-    fclose(fp);
 
+    }
+
+
+    fclose(fp);
 
 }
 
@@ -112,13 +120,12 @@ int listener(char * PORT)
             printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
             return -1;
         }
-        if (init == 1) {
+
             if (bind(socket_desc, p->ai_addr, p->ai_addrlen) == -1) {
                 close(socket_desc);
                 printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
                 return -1;
             }
-        }
         break;
     }
     // client not found
@@ -150,17 +157,25 @@ int main(int argc, char *argv[])
     int numbytes;
 
     // File Request: ip address, port, file
-    const char * fileReq = "10.121.201.7 4950 /home/CS/users/rwhite/.linux/joshroseproj/rwhite-jmeleski/serverFiles/dictionary.txt";
+    char fileReq[MAX_PAYLOAD_SIZE];
 
     // Read in the arg vals from the command line
-    const char * serverVal = argv[1];
+    serverVal = argv[1];
     printf("SERVER_IP: %s\n", serverVal);
-    const char * serverPort = argv[2];
+    char * serverPort = argv[2];
     printf("SERVER_PORT: %s\n", serverPort);
-    const char * remotePath = argv[3];
+    char * remotePath = argv[3];
     printf("REMOTE_PATH: %s\n", remotePath);
-    const char * localPath = argv[4];
+    localPath = argv[4];
     printf("LOCAL_PATH: %s\n", localPath);
+
+    strcpy(fileReq, serverVal);
+    strcat(fileReq, " ");
+    strcat(fileReq, serverPort);
+    strcat(fileReq, " ");
+    strcat(fileReq, remotePath);
+    printf("File Request: %s\n", fileReq);
+
 
     // Makes sure program received correct # args
     if (argc != 5) {
@@ -168,26 +183,32 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+
+    //sends server request for file
     send_it(fileReq, serverPort);
 
-    // listen for the following response
-  /*  for (int i=0; i<9; i++) {
-        // listener returns -1 if the ACK didn't == "PACK"
-        if (listener() == -1) {
-            if (i == 8) {
-                fprintf(stderr, "listener failed to receive acknowledgement.\n");
-                exit(1);
-            } else {
-                if ((numbytes = sendto(socket_desc, fileReq, strlen(fileReq), 0, p->ai_addr, p->ai_addrlen)) == -1) {
-                    perror("talker: sendto (second try)");
-                    exit(1);
-                }
-                printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
-            }
-        } else {
-            break;
-        }
-    }*/
+/*    // listen for the following response
+    //Attempts to listen for response from server
+    // Waits 2 seconds
+    // If this fails it tries again 8 times
+    time_t secs = 2; // 2 minutes (can be retrieved from user's input)
+    time_t startTime = time(NULL);
+    int listen;
+
+  for (int i=0; i<9; i++) {
+
+      // listener returns -1 if the ACK didn't == "PACK"
+      while (time(NULL) - startTime < secs) {
+          if (listener(serverPort) == -1) {
+              if (i == 8) {
+                  fprintf(stderr, "listener failed to receive acknowledgement.\n");
+                  exit(1);
+
+              }
+          }else
+              break;
+      }
+  }*/
 
 
     // receive data
