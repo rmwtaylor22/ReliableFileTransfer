@@ -27,8 +27,8 @@ Specification that describes the designed RFT protocol
 -----------------------------------------
 
 <ul>
-<li>For the initial send of data from the client, we will assign sequential numbers to data packets before sending them across the network; and also include a checksum.</li>
-<li>The server will check the numbers of the packets it has received and send acknowledgments back if it does or doesn’t receive the number it expected.
+<li>For the initial send of data, the client sends the file path of the desired server file it wants to write to a file.</li>
+<li>The server will check if the requested file exists. If it doesn't the program errors and stops.</li>
 <ul>
 <li>If the sum is transferred correctly, then the server will send back a positive acknowledgment and store the data within a buffer until all the data has been received.</li>
 </ul>
