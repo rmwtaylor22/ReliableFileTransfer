@@ -12,7 +12,7 @@
 // #define SERVER "10.121.218.11"
 
 
-#define CLIENT "10.121.218.10"
+#define CLIENT "10.121.217.5"
 // #define MAX_CLIENT_BACKLOG 128
 #define MAX_BUFFER_SIZE 1500
 #define ACK_HEADER 4
@@ -25,9 +25,10 @@ struct addrinfo hints;
 struct addrinfo * address_resource;
 struct sockaddr_storage remote_addr;
 socklen_t remote_addr_s = sizeof(remote_addr);
+int init = 1;
+
 
 void Listen();
-
 
 void process_response(PORT)
 {
@@ -38,10 +39,10 @@ void process_response(PORT)
 
 
 
+
+
 void send_it(char *buf, char * PORT){
-    int numbytes;
     int rv;
-    char * send_buf[MAX_BUFFER_SIZE];
     struct addrinfo *p;
 
     // get address info
@@ -63,41 +64,34 @@ void send_it(char *buf, char * PORT){
         fprintf(stderr, "talker: failed to create socket\n");
         return;
     }
-
-    int bytes_read;
-    char c;
-
-    // loop of sending char c data chunk by chunk
-    while(1) {
-        bytes_read = fread(&c, 1, 1500, buf);
-        if (bytes_read != 1) {
-            break;
-        }
-        sendto(socket_desc, &c, strlen(&c), 0, p->ai_addr, p->ai_addrlen);
-    }
+    printf("SENDING PACKET \n");
+    sendto(socket_desc, buf, strlen(buf), 0, p->ai_addr, p->ai_addrlen);
 }
 
 void process_request(char * PORT) {
     int num_bytes;
-    char * ackBuf[ACK_HEADER];
-    char * dataBuf[MAX_BUFFER_SIZE];
     char * recv_buf[MAX_BUFFER_SIZE];
     remote_addr_s = sizeof(remote_addr);
     num_bytes = recvfrom(socket_desc, recv_buf, MAX_BUFFER_SIZE - 1, 0, (struct sockaddr *) &remote_addr, &remote_addr_s);
+    printf("%hu\n", remote_addr.ss_family);
+
+    struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&remote_addr;
+    struct in_addr ipAddr = pV4Addr->sin_addr;
+    char str[INET_ADDRSTRLEN];
 
     if (num_bytes == -1)
         printf("Error: recvfrom %s (line: %d)\n", strerror(errno), __LINE__);
 
     printf("Received packet \nPacket is %d long\n", num_bytes);
-
-    // Marks the end of the file?
-    char buf= '\0';
-    printf("PACKET CONTENTS: %s \n", *recv_buf);
-
+    printf("PACKET CONTENTS: %s \n", recv_buf);
 
     char ip[15], port[4], file[100];
 
     sscanf((const char *) recv_buf, "%s %s %s", ip, port, file);
+    printf("IP: %s\n", ip);
+    printf("PORT: %s", port);
+    printf("FILE: %s", file);
+
 
     // parse incoming buffer for search paths
     FILE *fp;
@@ -106,30 +100,47 @@ void process_request(char * PORT) {
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
     }
     else {
+        printf("File opened");
         int bytes_read;
         char c;
-        int totalRead = 0;
+        char buf[1500];
+        int i =0;
 
         // read all of the data into c buffer
         while (1) {
             bytes_read = fread(&c, 1, 1, fp);
-            totalRead ++;
-            if (bytes_read != 1) {
+            buf[i] = c;
+
+            if (c == EOF){
+                send_it(buf, PORT);
                 break;
             }
-            if (totalRead % 1500 == 0){
-                // send buffer to "send_it" to have the data be sent little by little
-                send_it(&c, PORT);
+            if (bytes_read != 1) {
+                send_it(buf, PORT);
+                break;
+            }
+            i++;
+
+            // send once packet reaches 1500 bytes
+            if(i % 1500 == 0){
+                send_it(buf, PORT);
+                // listen for client
+                // if "PACK", continue (positive acknowledgement)
+                // if "NACK", enter loop (negative acknowledgement)
+                // while "NACK" && tries < 8:
+                // send_it(buf, PORT)
+                // tries ++
                 memset(&c, 0, 1);
+                i = 0;
             }
         }
+
         // send the rest of the data if there is some
-        if(c != NULL)
+        printf("FINAL file contents: %s \n", buf);
+        //send_it(buf, PORT);
+
     }
 }
-
-
-
 
 
 void Listen(char * PORT){
@@ -141,16 +152,19 @@ void Listen(char * PORT){
     if (return_value != 0) {
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
     }
+
     // Loops until client is found
     for  (p = address_resource; p != NULL ; p = p->ai_next) {
         if( (socket_desc = socket(p->ai_family, p->ai_socktype, p->ai_protocol))  == -1) {
             printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
             return;
         }
-        if (bind(socket_desc, p->ai_addr, p->ai_addrlen ) == -1){
-            close(socket_desc);
-            printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-            return;
+        if (init == 1){
+            if (bind(socket_desc, p->ai_addr, p->ai_addrlen ) == -1){
+                close(socket_desc);
+                printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+                return;
+            }
         }
         break;
     }
@@ -160,18 +174,16 @@ void Listen(char * PORT){
     }
 
     printf("Listener: waiting to recv from... \n");
-    process_request(PORT);
-
+    if (init == 1){
+        init = 0;
+        process_request(PORT);
+    }
 }
 
 int main(int argc, char* argv[]) {
 
     char *PORT = argv[1];
-
-   // char s[INET_ADDRSTRLEN];
-
     printf("%s \n", PORT);
-
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;  // IPv4
@@ -181,7 +193,6 @@ int main(int argc, char* argv[]) {
     hints.ai_flags = AI_PASSIVE; // Listen
 
     //return value for listener
-
     Listen(PORT);
     freeaddrinfo(address_resource);
 
