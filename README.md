@@ -32,7 +32,8 @@ Specification that describes the designed RFT protocol
 <li>If the file does exist, the server reads all of the files contents into a buffer.</li>
 <li>The server enters a loop, sending 1500 bytes packets over to the client. It only sends the next if the client sends back a "PACK" (positive ack).
 <ul>
-<li>The server will resend the packet up to eight times. On the eighth "NACK" (negative ack) it will finally give up and quit the program.</li>
+<li>The server will resend the packet up to eight times.</li>
+<li>On the eighth "NACK" (negative ack) it will finally give up and quit the program.</li>
 </ul>
 <li>The client will wait to receive the packet. If the packet contains content, the client returns a "PACK"  to the server; but if the contents of the packet is -1/ if a mal packet was sent, it returns a "NACK" to the server. </li>
 <li>A timeout method will also be implemented in the case that a packet is dropped and never even reaches the receiver to get a positive or negative aknowledgement. In the case of a timeout, the client will resend the packet again.
@@ -71,6 +72,8 @@ To overcome lost and out of sequence packets, we have implemented a method of se
 
  
 	
-
+Given more time
+----------------------------------------------
+We wanted to implement the acknowledgements, and originally we also planned on including sequence numbers in the check. This would've been a stop and go method, which although not efficient, would've gotten the job done. We went ahead and added sudo code in the places we would've implemented this.
 
 
