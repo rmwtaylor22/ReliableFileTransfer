@@ -30,7 +30,7 @@ Specification that describes the designed RFT protocol
 <li>For the initial send of data, the client sends the file path of the desired server file it wants to write to a file.</li>
 <li>The server will check if the requested file exists. If it doesn't the program errors and stops.</li>
 <li>If the file does exist, the server reads all of the files contents into a buffer.</li>
-<li>The server enters a loop, sending 1500 bytes packets over to the client. It only sends the next if the client sends back a "PACK" (positive ack).</li>
+<li>The server enters a loop, sending 1500 bytes packets over to the client. It only sends the next if the client sends back a "PACK" (positive ack).
 <ul>
 <li>The server will resend the packet up to eight times. On the eighth "NACK" (negative ack) it will finally give up and quit the program.</li>
 </ul>
